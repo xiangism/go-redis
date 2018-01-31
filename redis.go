@@ -1,9 +1,10 @@
-package go_redis
+package redis
 
 import (
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"strings"
+	"time"
 )
 
 func typeof(v interface{}) string {
@@ -17,9 +18,18 @@ type Redis struct {
 // 这里一定得用指针
 func (r *Redis) Connect(ip string) bool {
 	var err error
-	r.conn, err = redis.Dial("tcp", ip)
+	r.conn, err = redis.Dial("tcp", ip,
+		redis.DialConnectTimeout(time.Second*10), redis.DialReadTimeout(time.Second*10), redis.DialWriteTimeout(time.Second*10))
+	//r.conn, err = redis.DialTimeout("tcp", ip)
 
 	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *Redis) isConn() bool {
+	if r.conn == nil {
 		return false
 	}
 	return true
@@ -105,6 +115,10 @@ func convMap(reply interface{}) map[string]string {
 //////////////////////////////////////////////////////////
 // Keys
 func (r *Redis) Del(key string) bool {
+	if !r.isConn() {
+		return false
+	}
+
 	reply, err := r.conn.Do("del", key)
 
 	if err != nil {
@@ -114,6 +128,10 @@ func (r *Redis) Del(key string) bool {
 }
 
 func (r *Redis) Exists(key string) bool {
+	if !r.isConn() {
+		return false
+	}
+
 	reply, err := r.conn.Do("exists", key)
 	if err != nil {
 		return false
@@ -122,6 +140,10 @@ func (r *Redis) Exists(key string) bool {
 }
 
 func (r *Redis) Expire(key string, expire int64) bool {
+	if !r.isConn() {
+		return false
+	}
+
 	reply, err := r.conn.Do("expire", key, expire)
 
 	if err != nil {
@@ -132,6 +154,10 @@ func (r *Redis) Expire(key string, expire int64) bool {
 }
 
 func (r *Redis) Keys(pattern string) []string {
+	if !r.isConn() {
+		return [] string{}
+	}
+
 	reply, err := r.conn.Do("keys", pattern)
 
 	if err != nil {
@@ -142,6 +168,9 @@ func (r *Redis) Keys(pattern string) []string {
 }
 
 func (r *Redis) Rename(key, newkey string) bool {
+	if !r.isConn() {
+		return false
+	}
 
 	reply, err := r.conn.Do("rename", key, newkey)
 
@@ -152,6 +181,10 @@ func (r *Redis) Rename(key, newkey string) bool {
 }
 
 func (r *Redis) Type(key string) string {
+	if !r.isConn() {
+		return ""
+	}
+
 	reply, err := r.conn.Do("type", key)
 
 	if err != nil {
@@ -175,6 +208,10 @@ func (r *Redis) Type(key string) string {
 //////////////////////////////////////////////////////////
 // string
 func (r *Redis) Get(key string) string {
+	if !r.isConn() {
+		return ""
+	}
+
 	reply, err := r.conn.Do("get", key)
 
 	if err != nil {
@@ -190,6 +227,9 @@ func (r *Redis) Get(key string) string {
 }
 
 func (r *Redis) MGet(keys ...string) []string {
+	if !r.isConn() {
+		return []string{}
+	}
 
 	s := make([]interface{}, len(keys))
 
@@ -208,6 +248,14 @@ func (r *Redis) MGet(keys ...string) []string {
 }
 
 func (r *Redis) Set(key, value string) bool {
+	if !r.isConn() {
+		return false
+	}
+
+	if !r.isConn() {
+		return false
+	}
+
 	reply, err := r.conn.Do("set", key, value)
 
 	if err != nil {
@@ -226,57 +274,90 @@ func (r *Redis) Set(key, value string) bool {
 //////////////////////////////////////////////////////////
 // list
 func (r *Redis) Blpop(key string) string {
+	if !r.isConn() {
+		return ""
+	}
 	// TODO:
 	return ""
 }
 
 func (r *Redis) Brpop(key string) string {
+	if !r.isConn() {
+		return ""
+	}
 	// TODO:
 	return ""
 }
 
 func (r *Redis) LIndex(key string, index int64) string {
+	if !r.isConn() {
+		return ""
+	}
 	// TODO:
 	return ""
 }
 
 func (r *Redis) LLen(key string) int64 {
+	if !r.isConn() {
+		return 0
+	}
 	// TODO
 	return 0
 }
 
 func (r *Redis) LPop(key string) string {
+	if !r.isConn() {
+		return ""
+	}
 	// TODO
 	return ""
 }
 
 func (r *Redis) LPush(key, value string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
 
 func (r *Redis) LRange(key string, start int64, stop int64) []string {
+	if !r.isConn() {
+		return []string{}
+	}
 	// TODO:
 	rs := []string{}
 	return rs
 }
 
 func (r *Redis) LRem(key string, count int64, value string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
 
 func (r *Redis) LSet(key string, index int64, value string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
 
 func (r *Redis) RPop(key string) string {
+	if !r.isConn() {
+		return ""
+	}
 	// TODO:
 	return ""
 }
 
 func (r *Redis) RPush(key, value string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
@@ -284,6 +365,9 @@ func (r *Redis) RPush(key, value string) bool {
 //////////////////////////////////////////////////////////
 // set
 func (r *Redis) SAdd(key, member string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO: test
 	reply, err := r.conn.Do("sadd", key, member)
 
@@ -294,6 +378,9 @@ func (r *Redis) SAdd(key, member string) bool {
 }
 
 func (r *Redis) SCard(key string) int64 {
+	if !r.isConn() {
+		return 0
+	}
 	// TODO: test
 	reply, err := r.conn.Do("scard", key)
 
@@ -304,6 +391,9 @@ func (r *Redis) SCard(key string) int64 {
 }
 
 func (r *Redis) SIsMember(key, member string) bool {
+	if !r.isConn() {
+		return false
+	}
 
 	// TODO: test
 	reply, err := r.conn.Do("sismember", key)
@@ -315,6 +405,9 @@ func (r *Redis) SIsMember(key, member string) bool {
 }
 
 func (r *Redis) SMembers(key string) []string {
+	if !r.isConn() {
+		return []string{}
+	}
 
 	reply, err := r.conn.Do("smembers", key)
 
@@ -325,11 +418,17 @@ func (r *Redis) SMembers(key string) []string {
 }
 
 func (r *Redis) SPop(key string, count int64) []string {
+	if !r.isConn() {
+		return []string{}
+	}
 	// TODO:
 	return []string{}
 }
 
 func (r *Redis) SRem(key, member string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
@@ -338,6 +437,9 @@ func (r *Redis) SRem(key, member string) bool {
 // hash
 
 func (r *Redis) HDel(key, field string) bool {
+	if !r.isConn() {
+		return false
+	}
 	reply, err := r.conn.Do("hdel", key, field)
 	if err != nil {
 		return false
@@ -346,6 +448,9 @@ func (r *Redis) HDel(key, field string) bool {
 }
 
 func (r *Redis) HExists(key, field string) bool {
+	if !r.isConn() {
+		return false
+	}
 	reply, err := r.conn.Do("hexists", key, field)
 	if err != nil {
 		return false
@@ -354,6 +459,9 @@ func (r *Redis) HExists(key, field string) bool {
 }
 
 func (r *Redis) HGet(key, field string) string {
+	if !r.isConn() {
+		return ""
+	}
 	reply, err := r.conn.Do("hget", key, field)
 
 	if err != nil {
@@ -363,6 +471,10 @@ func (r *Redis) HGet(key, field string) string {
 }
 
 func (r *Redis) HGetall(key string) map[string]string {
+	if !r.isConn() {
+		return make(map[string]string)
+	}
+
 	reply, err := r.conn.Do("hgetall", key)
 
 	if err != nil {
@@ -372,6 +484,10 @@ func (r *Redis) HGetall(key string) map[string]string {
 }
 
 func (r *Redis) HMget(key string, fields ...string) map[string]string {
+	if !r.isConn() {
+		//return make(map[string]string)
+		return map[string]string{}
+	}
 
 	s := make([]interface{}, len(fields)+1)
 
@@ -398,11 +514,17 @@ func (r *Redis) HMget(key string, fields ...string) map[string]string {
 }
 
 func (r *Redis) HMset(key string, fs map[string]string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
 
 func (r *Redis) HSet(key, field, value string) bool {
+	if !r.isConn() {
+		return false
+	}
 	// TODO:
 	return false
 }
