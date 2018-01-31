@@ -39,7 +39,7 @@ func (r *Redis) isConn() bool {
 func replyOK(reply interface{}) bool {
 	i, ok := reply.(int64)
 	if ok {
-		return i == 1
+		return i >= 1
 	}
 	s, ok := reply.(string)
 	if ok {
@@ -110,6 +110,32 @@ func convMap(reply interface{}) map[string]string {
 		}
 	}
 	return mp
+}
+
+//////////////////////////////////////////////////////////
+// Server
+
+func (r *Redis) Dbsize() int64 {
+	if !r.isConn() {
+		return 0
+	}
+
+	reply, err := r.conn.Do("dbsize")
+	if err != nil {
+		return 0
+	}
+	return convInt(reply)
+}
+
+func (r *Redis) Info() string {
+	if !r.isConn() {
+		return ""
+	}
+	reply, err := r.conn.Do("info")
+	if err != nil {
+		return ""
+	}
+	return convString(reply)
 }
 
 //////////////////////////////////////////////////////////
@@ -273,93 +299,120 @@ func (r *Redis) Set(key, value string) bool {
 
 //////////////////////////////////////////////////////////
 // list
-func (r *Redis) Blpop(key string) string {
-	if !r.isConn() {
-		return ""
-	}
-	// TODO:
-	return ""
-}
-
-func (r *Redis) Brpop(key string) string {
-	if !r.isConn() {
-		return ""
-	}
-	// TODO:
-	return ""
-}
 
 func (r *Redis) LIndex(key string, index int64) string {
 	if !r.isConn() {
 		return ""
 	}
-	// TODO:
-	return ""
+
+	reply, err := r.conn.Do("lindex", key, index)
+
+	if err != nil {
+		return ""
+	}
+
+	return convString(reply)
 }
 
 func (r *Redis) LLen(key string) int64 {
 	if !r.isConn() {
 		return 0
 	}
-	// TODO
-	return 0
+	reply, err := r.conn.Do("llen", key)
+
+	if err != nil {
+		return 0
+	}
+	return convInt(reply)
 }
 
 func (r *Redis) LPop(key string) string {
 	if !r.isConn() {
 		return ""
 	}
-	// TODO
-	return ""
+	reply, err := r.conn.Do("lpop", key)
+
+	if err != nil {
+		return ""
+	}
+	return convString(reply)
 }
 
 func (r *Redis) LPush(key, value string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+	reply, err := r.conn.Do("lpush", key, value)
+
+	if err != nil {
+		return false
+	}
+	return replyOK(reply)
 }
 
 func (r *Redis) LRange(key string, start int64, stop int64) []string {
 	if !r.isConn() {
 		return []string{}
 	}
-	// TODO:
-	rs := []string{}
-	return rs
+
+	reply, err := r.conn.Do("lrange", key, start, stop)
+
+	if err != nil {
+		return []string{}
+	}
+
+	return convArr(reply)
 }
 
 func (r *Redis) LRem(key string, count int64, value string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+
+	reply, err := r.conn.Do("lrem", key, count, value)
+
+	if err != nil {
+		return false
+	}
+
+	return replyOK(reply)
 }
 
 func (r *Redis) LSet(key string, index int64, value string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+	reply, err := r.conn.Do("lset", key, index, value)
+
+	if err != nil {
+		return false
+	}
+
+	return replyOK(reply)
 }
 
 func (r *Redis) RPop(key string) string {
 	if !r.isConn() {
 		return ""
 	}
-	// TODO:
-	return ""
+	reply, err := r.conn.Do("rpop", key)
+
+	if err != nil {
+		return ""
+	}
+	return convString(reply)
 }
 
 func (r *Redis) RPush(key, value string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+	reply, err := r.conn.Do("rpush", key, value)
+
+	if err != nil {
+		return false
+	}
+	return replyOK(reply)
 }
 
 //////////////////////////////////////////////////////////
@@ -368,7 +421,6 @@ func (r *Redis) SAdd(key, member string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO: test
 	reply, err := r.conn.Do("sadd", key, member)
 
 	if err != nil {
@@ -381,7 +433,6 @@ func (r *Redis) SCard(key string) int64 {
 	if !r.isConn() {
 		return 0
 	}
-	// TODO: test
 	reply, err := r.conn.Do("scard", key)
 
 	if err != nil {
@@ -395,8 +446,7 @@ func (r *Redis) SIsMember(key, member string) bool {
 		return false
 	}
 
-	// TODO: test
-	reply, err := r.conn.Do("sismember", key)
+	reply, err := r.conn.Do("sismember", key, member)
 
 	if err != nil {
 		return false
@@ -417,20 +467,28 @@ func (r *Redis) SMembers(key string) []string {
 	return convArr(reply)
 }
 
-func (r *Redis) SPop(key string, count int64) []string {
+func (r *Redis) SPop(key string) string {
 	if !r.isConn() {
-		return []string{}
+		return ""
 	}
-	// TODO:
-	return []string{}
+	reply, err := r.conn.Do("spop", key)
+
+	if err != nil {
+		return ""
+	}
+	return convString(reply)
 }
 
 func (r *Redis) SRem(key, member string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+	reply, err := r.conn.Do("srem", key, member)
+
+	if err != nil {
+		return false
+	}
+	return replyOK(reply)
 }
 
 //////////////////////////////////////////////////////////
@@ -485,7 +543,6 @@ func (r *Redis) HGetall(key string) map[string]string {
 
 func (r *Redis) HMget(key string, fields ...string) map[string]string {
 	if !r.isConn() {
-		//return make(map[string]string)
 		return map[string]string{}
 	}
 
@@ -517,16 +574,40 @@ func (r *Redis) HMset(key string, fs map[string]string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+
+	s := make([]interface{}, len(fs)*2+1)
+
+	s[0] = key
+	i := 0
+	for key, value := range fs {
+		s[1+i*2] = key
+		s[1+i*2+1] = value
+
+		i++
+	}
+
+	reply, err := r.conn.Do("hmset", s...)
+
+	if err != nil {
+		return false
+	}
+
+	return replyOK(reply)
 }
 
 func (r *Redis) HSet(key, field, value string) bool {
 	if !r.isConn() {
 		return false
 	}
-	// TODO:
-	return false
+
+	reply, err := r.conn.Do("hset", key, field, value)
+
+	if err != nil {
+		fmt.Println("err have:", err)
+		return false
+	}
+
+	return replyOK(reply)
 }
 
 //////////////////////////////////////////////////////////
