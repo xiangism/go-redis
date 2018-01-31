@@ -165,12 +165,26 @@ func (r *Redis) Exists(key string) bool {
 	return replyOK(reply)
 }
 
-func (r *Redis) Expire(key string, expire int64) bool {
+func (r *Redis) Expire(key string, second int64) bool {
 	if !r.isConn() {
 		return false
 	}
 
-	reply, err := r.conn.Do("expire", key, expire)
+	reply, err := r.conn.Do("expire", key, second)
+
+	if err != nil {
+		return false
+	}
+
+	return replyOK(reply)
+}
+
+func (r *Redis) ExpireAt(key string, timestampe int64) bool {
+	if !r.isConn() {
+		return false
+	}
+
+	reply, err := r.conn.Do("expireAt", key, timestampe)
 
 	if err != nil {
 		return false
@@ -193,6 +207,19 @@ func (r *Redis) Keys(pattern string) []string {
 	return convArr(reply)
 }
 
+func (r *Redis) Persist(key string) bool {
+	if !r.isConn() {
+		return false
+	}
+
+	reply, err := r.conn.Do("persist", key)
+
+	if err != nil {
+		return false
+	}
+	return replyOK(reply)
+}
+
 func (r *Redis) Rename(key, newkey string) bool {
 	if !r.isConn() {
 		return false
@@ -204,6 +231,31 @@ func (r *Redis) Rename(key, newkey string) bool {
 		return false
 	}
 	return replyOK(reply)
+}
+
+func (r *Redis) Touch(key string) bool {
+	if !r.isConn() {
+		return false
+	}
+
+	reply, err := r.conn.Do("touch", key)
+
+	if err != nil {
+		return false
+	}
+	return replyOK(reply)
+}
+
+func (r *Redis) Ttl(key string) int64 {
+	if !r.isConn() {
+		return 0
+	}
+
+	reply, err := r.conn.Do("ttl", key)
+	if err != nil {
+		return 0
+	}
+	return convInt(reply)
 }
 
 func (r *Redis) Type(key string) string {
@@ -513,6 +565,7 @@ func (r *Redis) HExists(key, field string) bool {
 	if err != nil {
 		return false
 	}
+	//fmt.Println("redis:", reply)
 	return replyOK(reply)
 }
 
