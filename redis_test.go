@@ -2,8 +2,8 @@ package redis
 
 import (
 	"testing"
-	"strconv"
-	"fmt"
+	_ "strconv"
+	_ "fmt"
 )
 
 // 比较两个map[string]string是否完全相同
@@ -12,13 +12,9 @@ func equalMap(m1, m2 map[string]string) bool {
 		return false
 	}
 
+	// 由于上面的长度对比后， 这里只需要循环一下m1即可， 不再需要循环m2了
 	for k, v := range m1 {
 		if m2[k] != v {
-			return false
-		}
-	}
-	for k, v := range m2 {
-		if m1[k] != v {
 			return false
 		}
 	}
@@ -125,16 +121,26 @@ func TestKey(t *testing.T) {
 	}
 
 	if db.Get(key) != "" {
-		t.Error("rename2 error. %s", key)
+		t.Errorf("rename2 error. %s", key)
 	}
 
 	ks := db.Keys("*")
 	dbsize := db.Dbsize()
 
 	if int64(len(ks)) != dbsize {
-		t.Error("keys dbsize, error, %d, %d\n", len(ks), dbsize)
+		t.Errorf("keys dbsize, error, %d, %d\n", len(ks), dbsize)
+	}
+
+	db.Del(key)
+	if !db.Set(key, "a") {
+		t.Errorf("set1 error")
+	}
+	if !db.Set(key, "b") {
+		t.Errorf("set2 error")
 	}
 }
+
+/*
 
 func TestExpire(t *testing.T) {
 	db := getDb()
@@ -276,6 +282,18 @@ func TestSet(t *testing.T) {
 	if i != 0 {
 		t.Errorf("spop, error, %d", i)
 	}
+
+	db.Del(key)
+	db.SAdd(key, "a")
+	db.SAdd(key, "b")
+	db.SAdd(key, "c")
+	db.SAdd(key, "d")
+
+	rs := db.SRandmember(key, 4)
+
+	if !equalSet(rs, []string{ "a", "b", "c", "d"}) {
+		t.Errorf("srandmember error, %v\n", rs)
+	}
 }
 
 func TestHash(t *testing.T) {
@@ -330,6 +348,15 @@ func TestHash(t *testing.T) {
 	if db.HExists(key, field) {
 		t.Errorf("hexist error")
 	}
+
+	db.Del(key)
+	if !db.HSet(key, "h1", "a") {
+		t.Errorf("hset error1")
+	}
+	if !db.HSet(key, "h1", "b") {
+		t.Errorf("hset error2")
+	}
+
 }
 
 func TestMap(t *testing.T) {
@@ -351,3 +378,4 @@ func TestMap(t *testing.T) {
 		t.Errorf("map not equal, m1:(%v), m2:(%v)", m1, m2)
 	}
 }
+ */

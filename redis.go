@@ -543,6 +543,18 @@ func (r *Redis) SRem(key, member string) bool {
 	return replyOK(reply)
 }
 
+func (r *Redis) SRandmember(key string, count int64) [] string {
+	if !r.isConn() {
+		return []string {}
+	}
+	reply, err := r.conn.Do("srandmember", key, count)
+
+	if err != nil {
+		return [] string{}
+	}
+	return convArr(reply)
+}
+
 //////////////////////////////////////////////////////////
 // hash
 
